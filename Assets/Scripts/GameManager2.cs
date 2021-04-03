@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class GameManager2 : MonoBehaviour
 {
@@ -43,7 +44,7 @@ public class GameManager2 : MonoBehaviour
             PlayerPrefs.SetInt(m_HighScoreStr, m_HighScore);
         }
     }
-        
+
     private static GameManager2 s_Singleton;
     public static GameManager2 Singleton
     {
@@ -80,6 +81,17 @@ public class GameManager2 : MonoBehaviour
         var gg = HighScore;
         SetupZones();
         SetBallColor();
+
+        var input = GetComponent<PlayerInput>();
+
+#if UNITY_EDITOR        
+        input.SwitchCurrentControlScheme("Keyboard&Mouse");
+#elif UNITY_ANDROID
+        input.SwitchCurrentControlScheme("Touch");
+#else
+        input.SwitchCurrentControlScheme("Keyboard&Mouse");
+#endif
+
     }
 
     void SetupZones()
@@ -113,20 +125,31 @@ public class GameManager2 : MonoBehaviour
     public float m_MouseSpeed = 1f;
     private Vector3 m_MousePosDown;
 
+    
+    public float m_MousePressFloat = 0;
+
+    public bool m_MousePress;
+    public Vector3 m_MovementDiff;
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            m_MousePosDown = Input.mousePosition;
-        }
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    m_MousePosDown = Input.mousePosition;
+        //}
 
-        if (Input.GetMouseButton(0))
+        m_MousePress = m_MousePressAction.ReadValue<float>() > .5f;
+        if (m_MousePress)
+        //if (Input.GetMouseButton(0))
         {
-            var diff = Input.mousePosition - m_MousePosDown;
-            diff = new Vector3(diff.x * m_MouseSpeed, 0, 0);
-            m_MousePosDown = Input.mousePosition;
+            //var diff = Input.mousePosition - m_MousePosDown;
+            //diff = new Vector3(diff.x * m_MouseSpeed, 0, 0);
+            //m_MousePosDown = Input.mousePosition;
+            //m_MousePressFloat = m_MousePressAction.ReadValue<float>();
+            m_MovementDiff = m_FuckUnityAction.ReadValue<Vector2>();
+
+            var diff = new Vector3(m_MovementDiff.x * m_MouseSpeed, 0, 0);
 
             m_PadTop.transform.position += diff;
             m_PadBottom.transform.position += diff;
@@ -143,4 +166,55 @@ public class GameManager2 : MonoBehaviour
             }
         }
     }
+
+
+    void OnFuckUnity(InputValue inputValue)
+    {
+        m_MovementDiff = inputValue.Get<Vector2>();
+        //inputValue.
+        Debug.Log("void OnFuckUnity() " + m_MovementDiff);
+    }
+
+    void OnClick()
+    {
+        Debug.Log("void OnClick()");
+    }
+
+    void OnMove()
+    {
+        Debug.Log("void OnMove()");
+    }
+
+    void OnMousePress()
+    {
+        Debug.Log("void OnMousePress()");
+        m_MousePress = true;
+    }
+
+
+
+
+    public PlayerInput m_PlayerInput;
+    public InputActionMap m_ActionMap;
+    public InputAction m_MousePressAction;
+    public InputAction m_FuckUnityAction;
+
+    void Awake()
+    {
+        m_PlayerInput = GetComponent<PlayerInput>();
+        m_ActionMap = m_PlayerInput.actions.FindActionMap("Player");
+        m_MousePressAction = m_ActionMap.FindAction("MousePress");
+        m_FuckUnityAction = m_ActionMap.FindAction("FuckUnity");
+    }
+
+    void OnEnable()
+    {
+        m_ActionMap.Enable();
+    }
+
+    void OnDisable()
+    {
+        m_ActionMap.Disable();
+    }
+
 }
